@@ -18,18 +18,49 @@ const toUserResponse = (user) => ({
   id: user._id,
   name: user.name,
   email: user.email,
+  profileImage: user.profileImage,
+  headline: user.headline,
   skills: user.skills,
   bio: user.bio,
   availability: user.availability,
-  github: user.github,
+  socialLinks: user.socialLinks || {
+    linkedin: "",
+    github: user.github || "",
+    leetcode: "",
+  },
   experience: user.experience,
+  metadata: user.metadata,
+  connections: user.connections,
+  savedHackathons: user.savedHackathons,
+  savedProjects: user.savedProjects,
+  registeredHackathons: user.registeredHackathons,
+  registeredProjects: user.registeredProjects,
+  ongoingProjects: user.ongoingProjects,
+  hackathonsParticipated: user.hackathonsParticipated,
+  hackathonsParticipatedCount: user.hackathonsParticipatedCount,
+  ongoingProjectsCount: user.ongoingProjectsCount,
+  connectionsCount: user.connectionsCount,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
 
 const register = async (req, res) => {
   try {
-    const { name, email, password, skills, bio, availability, github, experience } = req.body;
+    const {
+      name,
+      email,
+      password,
+      skills,
+      bio,
+      availability,
+      experience,
+      profileImage,
+      headline,
+      socialLinks,
+      linkedin,
+      leetcode,
+      github,
+    } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "name, email and password are required" });
@@ -49,8 +80,14 @@ const register = async (req, res) => {
       skills,
       bio,
       availability,
-      github,
       experience,
+      profileImage,
+      headline,
+      socialLinks: {
+        linkedin: socialLinks?.linkedin || linkedin || "",
+        github: socialLinks?.github || github || "",
+        leetcode: socialLinks?.leetcode || leetcode || "",
+      },
     });
 
     const token = signToken(user);
@@ -83,6 +120,10 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    user.metadata.lastLoginAt = new Date();
+    user.metadata.lastActiveAt = new Date();
+    await user.save();
+
     const token = signToken(user);
 
     return res.status(200).json({
@@ -111,7 +152,15 @@ const me = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const allowedFields = ["name", "skills", "bio", "availability", "github", "experience"];
+    const allowedFields = [
+      "name",
+      "skills",
+      "bio",
+      "availability",
+      "experience",
+      "profileImage",
+      "headline",
+    ];
     const updates = {};
 
     for (const field of allowedFields) {
@@ -120,13 +169,31 @@ const updateProfile = async (req, res) => {
       }
     }
 
+    if (req.body.socialLinks || req.body.linkedin || req.body.github || req.body.leetcode) {
+      updates.socialLinks = {
+        linkedin: req.body.socialLinks?.linkedin || req.body.linkedin || "",
+        github: req.body.socialLinks?.github || req.body.github || "",
+        leetcode: req.body.socialLinks?.leetcode || req.body.leetcode || "",
+      };
+    }
+
     const user = await User.findById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    if (req.body.github && !req.body.socialLinks && !req.body.linkedin) {
+      updates.socialLinks = {
+        linkedin: user.socialLinks?.linkedin || "",
+        github: req.body.github,
+        leetcode: user.socialLinks?.leetcode || "",
+      };
+    }
+
     Object.assign(user, updates);
+    user.metadata.lastProfileUpdateAt = new Date();
+    user.metadata.lastActiveAt = new Date();
     await user.save();
 
     return res.status(200).json({
@@ -138,9 +205,28 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const logout = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.metadata.lastLogoutAt = new Date();
+    user.metadata.lastActiveAt = new Date();
+    await user.save();
+
+    return res.status(200).json({ message: "Logout recorded" });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to logout", error: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
   me,
   updateProfile,
+  logout,
 };
