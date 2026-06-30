@@ -14,9 +14,22 @@ const signToken = (user) => {
   );
 };
 
+const toUserResponse = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  skills: user.skills,
+  bio: user.bio,
+  availability: user.availability,
+  github: user.github,
+  experience: user.experience,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
+
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, skills, bio, availability, github, experience } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "name, email and password are required" });
@@ -33,6 +46,11 @@ const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      skills,
+      bio,
+      availability,
+      github,
+      experience,
     });
 
     const token = signToken(user);
@@ -40,11 +58,7 @@ const register = async (req, res) => {
     return res.status(201).json({
       message: "User registered",
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user: toUserResponse(user),
     });
   } catch (error) {
     return res.status(500).json({ message: "Registration failed", error: error.message });
@@ -74,11 +88,7 @@ const login = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user: toUserResponse(user),
     });
   } catch (error) {
     return res.status(500).json({ message: "Login failed", error: error.message });
@@ -93,9 +103,38 @@ const me = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    return res.status(200).json(user);
+    return res.status(200).json(toUserResponse(user));
   } catch (error) {
     return res.status(500).json({ message: "Failed to fetch user", error: error.message });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const allowedFields = ["name", "skills", "bio", "availability", "github", "experience"];
+    const updates = {};
+
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    Object.assign(user, updates);
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      user: toUserResponse(user),
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to update profile", error: error.message });
   }
 };
 
@@ -103,4 +142,5 @@ module.exports = {
   register,
   login,
   me,
+  updateProfile,
 };

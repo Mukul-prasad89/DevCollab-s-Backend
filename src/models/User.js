@@ -19,6 +19,27 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
+    skills: {
+      type: [String],
+      default: [],
+    },
+    bio: {
+      type: String,
+      default: "",
+    },
+    availability: {
+      type: String,
+      enum: ["Available", "Busy", "Looking for Team"],
+      default: "Available",
+    },
+    github: {
+      type: String,
+      default: "",
+    },
+    experience: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
