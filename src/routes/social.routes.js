@@ -20,6 +20,8 @@ const {
   getPendingCollabRequests,
   acceptCollabRequest,
   rejectCollabRequest,
+  getUsers,
+  getUserProfile,
 } = require("../controllers/social.controller");
 
 const router = express.Router();
@@ -46,5 +48,8 @@ router.get("/collabs/pending", protect, getPendingCollabRequests);
 router.post("/collabs/request", protect, createCollabRequest);
 router.patch("/collabs/:requestId/accept", protect, acceptCollabRequest);
 router.patch("/collabs/:requestId/reject", protect, rejectCollabRequest);
+
+router.get("/users", protect, getUsers);
+router.get("/users/:userId", protect, getUserProfile);
 
 module.exports = router;

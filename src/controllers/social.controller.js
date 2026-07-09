@@ -538,6 +538,37 @@ const rejectCollabRequest = async (req, res) => {
   }
 };
 
+const getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    return res.status(200).json({ users });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch users", error: error.message });
+  }
+};
+
+const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .select("-password")
+      .populate({ path: "savedHackathons", select: "title description status" })
+      .populate({ path: "savedProjects", select: "title description status" })
+      .populate({ path: "registeredHackathons", select: "title description status" })
+      .populate({ path: "registeredProjects", select: "title description status" })
+      .populate({ path: "ongoingProjects", select: "title description status" })
+      .populate({ path: "hackathonsParticipated", select: "title description status" })
+      .populate({ path: "connections.user", select: "name profileImage headline" });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch user profile", error: error.message });
+  }
+};
+
 module.exports = {
   getDashboard,
   getConnections,
@@ -558,4 +589,6 @@ module.exports = {
   getPendingCollabRequests,
   acceptCollabRequest,
   rejectCollabRequest,
+  getUsers,
+  getUserProfile,
 };
