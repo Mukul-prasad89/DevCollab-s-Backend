@@ -180,15 +180,15 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.virtual("hackathonsParticipatedCount").get(function getHackathonsParticipatedCount() {
-  return this.hackathonsParticipated.length;
+  return this.hackathonsParticipated?.length ?? 0;
 });
 
 userSchema.virtual("ongoingProjectsCount").get(function getOngoingProjectsCount() {
-  return this.ongoingProjects.length;
+  return this.ongoingProjects?.length ?? 0;
 });
 
 userSchema.virtual("connectionsCount").get(function getConnectionsCount() {
-  return this.connections.length;
+  return this.connections?.length ?? 0;
 });
 
 module.exports = mongoose.model("User", userSchema);
