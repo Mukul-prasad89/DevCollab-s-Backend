@@ -146,8 +146,8 @@ const getConnectionRequests = async (req, res) => {
     const requests = await ConnectionRequest.find({
       $or: [{ requester: req.user.id }, { recipient: req.user.id }],
     })
-      .populate("requester", "name profileImage headline")
-      .populate("recipient", "name profileImage headline")
+      .populate("requester", "-password")
+      .populate("recipient", "-password")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({ requests });
